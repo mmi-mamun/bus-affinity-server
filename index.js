@@ -51,6 +51,20 @@ async function run() {
         app.post('/bookings', async (req, res) => {
             const booking = req.body;
             // console.log(booking);
+
+            /** Function for Each user booked maximum 2 seats (start)**/
+            const query = {
+                email: booking.email,
+                bookingDate: booking.bookingDate,
+                destination: booking.destination
+            }
+            const isBooked = await bookingsCollection.find(query).toArray();
+            if (isBooked.length >= 2) {
+                const message = `You already have a maximum booking on ${booking.bookingDate}`
+                return res.send({ acknowledged: false, message })
+            }
+            /** Function for Each user booked maximum 2 seats (end)**/
+
             const result = await bookingsCollection.insertOne(booking);
             res.send(result);
         })
