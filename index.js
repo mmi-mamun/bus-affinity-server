@@ -18,10 +18,18 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 async function run() {
     try {
         const bookingOptionCollection = client.db('busAffinity').collection('bookingOptions');
+        const bookingsCollection = client.db('busAffinity').collection('bookings');
         app.get('/bookingOptions', async (req, res) => {
             const query = {};
             const options = await bookingOptionCollection.find(query).toArray();
             res.send(options);
+        })
+
+        app.post('/bookings', async (req, res) => {
+            const booking = req.body;
+            console.log(booking);
+            const result = await bookingsCollection.insertOne(booking);
+            res.send(result);
         })
 
     }
