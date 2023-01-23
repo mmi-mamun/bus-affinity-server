@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 const port = process.env.PORT || 5000;
 
 require('dotenv').config();
@@ -15,10 +16,30 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster
 // console.log(uri);
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
+/*** Middleware function ***/
+function verifyJWT(req, res, next) {
+    // console.log('Token inside verifyJWT:::::', req.headers.authorization);
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+        return res.status(401).send('Unauthorized access')
+    }
+
+    const token = authHeader.split(' ')[1];
+    console.log('***', token)
+
+    jwt.verify(token, process.env.ACCESS_TOKEN, function (err, decoded) {
+        if (err) {
+            return res.status(403).send({ message: 'Forbidden access' })
+        }
+        req.decoded = decoded;
+        next();
+    })
+}
 async function run() {
     try {
         const bookingOptionCollection = client.db('busAffinity').collection('bookingOptions');
         const bookingsCollection = client.db('busAffinity').collection('bookings');
+        const usersCollection = client.db('busAffinity').collection('users');
 
         // use aggregate to query multiple collection and then marge data
         app.get('/bookingOptions', async (req, res) => {
@@ -69,12 +90,39 @@ async function run() {
             res.send(result);
         })
 
-        app.get('/bookings', async (req, res) => {
+        app.get('/bookings', verifyJWT, async (req, res) => {
+            // console.log('Token:::::', req.headers.authorization);
             const email = req.query.email;
-            // console.log(email);
+            const decodedEmail = req.decoded.email;
+            if (email !== decodedEmail) {
+                return res.status(403).send({ message: 'Forbidden access' });
+            }
+
+
             const query = { email: email };
             const bookings = await bookingsCollection.find(query).toArray();
             res.send(bookings);
+        })
+
+        /*** Store user list and data ***/
+        app.post('/users', async (req, res) => {
+            const user = req.body;
+            const result = await usersCollection.insertOne(user);
+            res.send(result);
+        })
+
+        /**** GENERATE JWT ***/
+        app.get('/jwt', async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email };
+            const user = await usersCollection.findOne(query);
+            if (user) {
+                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: '1h' });
+                console.log(token);
+                return res.send({ accessToken: token });
+            }
+            // console.log(user);
+            res.status(403).send({ accessToken: '' })
         })
 
     }
