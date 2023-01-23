@@ -132,8 +132,26 @@ async function run() {
             res.send(users);
         })
 
+        /*** Permission to see users (only admin) ***/
+        app.get('/users/admin/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email };
+            const user = await usersCollection.findOne(query);
+            res.send({ isAdmin: user?.role === 'Admin' })
+        })
+
         /*** Promote user ***/
-        app.put('/users/admin/:id', async (req, res) => {
+        app.put('/users/admin/:id', verifyJWT, async (req, res) => {
+            /* Check the promoter is admin or not (start) */
+            const decodedEmail = req.decoded.email;
+            const query = { email: decodedEmail };
+            const user = await usersCollection.findOne(query);
+            if (user?.role !== 'Admin') {
+                return res.status(403).send({ message: 'Forbidden AccesS' })
+            }
+            /* Check the promoter is admin or not (end) */
+
+
             const id = req.params.id;
             const filter = { _id: ObjectId(id) };
             const updatedDoc = {
