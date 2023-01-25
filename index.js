@@ -164,6 +164,14 @@ async function run() {
 
         })
 
+
+        /* Create API for getting bus name */
+        app.get('/busName', async (req, res) => {
+            const query = {};
+            const result = await bookingOptionCollection.find(query).project({ busName: 1 }).toArray();
+            res.send(result);
+        })
+
     }
     finally {
 
