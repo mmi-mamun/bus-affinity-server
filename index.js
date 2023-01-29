@@ -40,6 +40,8 @@ async function run() {
         const bookingOptionCollection = client.db('busAffinity').collection('bookingOptions');
         const bookingsCollection = client.db('busAffinity').collection('bookings');
         const usersCollection = client.db('busAffinity').collection('users');
+        const driversCollection = client.db('busAffinity').collection('drivers');
+        const staffCollection = client.db('busAffinity').collection('staff');
 
         // use aggregate to query multiple collection and then marge data
         app.get('/bookingOptions', async (req, res) => {
@@ -170,6 +172,21 @@ async function run() {
             const query = {};
             const result = await bookingOptionCollection.find(query).project({ busName: 1 }).toArray();
             res.send(result);
+        })
+
+        /* Add Driver */
+        app.post('/drivers', async (req, res) => {
+            const driver = req.body;
+            const result = await driversCollection.insertOne(driver);
+            res.send(result);
+        })
+
+        /* Add Staff */
+        app.post('/staff', async (req, res) => {
+            const staff = req.body;
+            const result = await staffCollection.insertOne(staff);
+            res.send(result);
+
         })
 
     }
