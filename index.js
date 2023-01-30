@@ -189,6 +189,21 @@ async function run() {
 
         })
 
+        /* Mange Staff */
+        app.get('/staff', async (req, res) => {
+            const query = {}
+            const staff = await staffCollection.find(query).toArray();
+            res.send(staff);
+
+        })
+
+        app.delete('/staff/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const result = await staffCollection.deleteOne(filter);
+            res.send(result);
+        })
+
     }
     finally {
 
